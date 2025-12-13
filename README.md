@@ -48,26 +48,13 @@ Built with **React + Vite + Tailwind CSS**, MediTrack focuses on usability, clar
 
 ---
 
-## Project Structure
-
-meditrack/
-├── src/
-│ ├── assets/ # Logos & static assets
-│ ├── App.jsx # Main application logic
-│ ├── main.jsx # App entry point
-│ └── index.css # Tailwind styles
-├── public/
-├── index.html
-├── tailwind.config.cjs
-├── vite.config.cjs
-└── package.json
 
 ## Future Improvements 
 
-🔔 Notification reminders
-💾 Persistent storage (LocalStorage / Backend)
-👥 Multi-user support
-📱 PWA / Mobile-first enhancements
-🧪 Unit & integration tests
+- Notification reminders
+- Persistent storage (LocalStorage / Backend)
+- Multi-user support
+- PWA / Mobile-first enhancements
+-  Unit & integration tests
 
 Live : https://medi-track-self.vercel.app
