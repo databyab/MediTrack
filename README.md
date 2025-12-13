@@ -1,16 +1,73 @@
-# React + Vite
+# MediTrack
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+MediTrack is a modern medication tracking web app that helps users manage daily medicines, reminders, and adherence in a clean, intuitive interface.
 
-Currently, two official plugins are available:
+Built with **React + Vite + Tailwind CSS**, MediTrack focuses on usability, clarity, and a premium UI experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Features (v1)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Medication Management**
+  - Add, view, and delete medications
+  - Custom dosage, units, and multiple reminder times
+  - Optional instructions and treatment duration
 
-## Expanding the ESLint configuration
+- **Daily Schedule**
+  - Automatically generated daily medication schedule
+  - Mark doses as **Taken** or **Skipped**
+  - Visual status indicators
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Adherence Tracking**
+  - Daily progress (taken vs remaining)
+  - Weekly adherence percentage
+  - 7-day adherence trend visualization
+
+- **Reports Dashboard**
+  - Weekly adherence summary
+  - Total doses taken
+  - Active medications count
+  - Recent activity log
+
+- **Modern UI**
+  - Gradient-based design
+  - Glassmorphism effects
+  - Responsive layout (mobile → desktop)
+  - Clean animations and hover states
+
+---
+
+## Tech Stack
+
+- **Frontend**: React (Hooks)
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **State Management**: React `useState`
+- **Deployment**: Vercel 
+
+---
+
+## Project Structure
+
+meditrack/
+├── src/
+│ ├── assets/ # Logos & static assets
+│ ├── App.jsx # Main application logic
+│ ├── main.jsx # App entry point
+│ └── index.css # Tailwind styles
+├── public/
+├── index.html
+├── tailwind.config.cjs
+├── vite.config.cjs
+└── package.json
+
+## Future Improvements 
+
+🔔 Notification reminders
+💾 Persistent storage (LocalStorage / Backend)
+👥 Multi-user support
+📱 PWA / Mobile-first enhancements
+🧪 Unit & integration tests
+
+Live : https://medi-track-self.vercel.app
