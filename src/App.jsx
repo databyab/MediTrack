@@ -405,7 +405,7 @@ const MediTrack = () => {
                     type="text"
                     value={newMed.name}
                     onChange={(e) => setNewMed({ ...newMed, name: e.target.value })}
-                    placeholder="e.g., Lisinopril"
+                    placeholder="e.g., Antibiotics"
                     className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm md:text-base"
                   />
                 </div>
