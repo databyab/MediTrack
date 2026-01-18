@@ -184,7 +184,7 @@ const MediTrack = () => {
 
   if (currentView === 'dashboard') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 animate-fadeIn">
         <Navigation />
 
         <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
