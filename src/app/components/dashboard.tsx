@@ -34,6 +34,8 @@ interface DashboardProps {
 }
 
 export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime }: DashboardProps) {
+  const lastCheckedRef = useRef<string>('');
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -42,6 +44,44 @@ export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHi
   });
 
   const todayDate = new Date().toISOString().split('T')[0];
+
+  // Check for reminders
+  useEffect(() => {
+    const checkReminders = () => {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const currentTime = `${hours}:${minutes}`;
+
+      if (lastCheckedRef.current === currentTime) return; // Already checked this minute
+      lastCheckedRef.current = currentTime;
+
+      medications.forEach(med => {
+        if (med.times.includes(currentTime)) {
+          // Check if already taken today
+          const isTakenOrMissed = doseHistory.some(h =>
+            h.medicationId === med.id &&
+            h.scheduledTime === currentTime &&
+            h.date === todayDate
+          );
+
+          if (!isTakenOrMissed) {
+            // Show toast
+            toast.info(`Reminder: Take ${med.name} (${med.dosage} ${med.unit})`, {
+              duration: 10000,
+              action: {
+                label: 'Mark Taken',
+                onClick: () => onMarkTaken(med.id, currentTime)
+              }
+            });
+          }
+        }
+      });
+    };
+
+    const interval = setInterval(checkReminders, 10000); // Check every 10s
+    return () => clearInterval(interval);
+  }, [medications, doseHistory, todayDate, onMarkTaken]);
 
   // Get today's scheduled medications
   const todaysMedications = medications.flatMap(med =>
