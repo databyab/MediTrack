@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navigation } from "@/app/components/Navigation";
-import { Dashboard } from "@/app/components/dashboard";
-import { Reports } from "@/app/components/reports";
+import { Dashboard } from "@/app/components/Dashboard";
+import { Reports } from "@/app/components/Reports";
 import { AddMedicationForm, MedicationFormData } from "@/app/components/AddMedicationForm";
 import { AuthScreen } from "@/app/components/AuthScreen";
 import { useAuth } from "@/context/AuthContext";
