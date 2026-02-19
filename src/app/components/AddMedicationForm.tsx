@@ -15,6 +15,7 @@ import {
 interface AddMedicationFormProps {
   onClose: () => void;
   onSave: (medication: MedicationFormData) => void;
+  initialData?: MedicationFormData;
 }
 
 export interface MedicationFormData {
@@ -28,10 +29,12 @@ export interface MedicationFormData {
   instructions?: string;
   condition?: string;
   prescribedBy?: string;
+  frequency: 'daily' | 'weekly';
+  selectedDays: string[];
 }
 
-export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
-  const [formData, setFormData] = useState<MedicationFormData>({
+export function AddMedicationForm({ onClose, onSave, initialData }: AddMedicationFormProps) {
+  const [formData, setFormData] = useState<MedicationFormData>(initialData || {
     name: '',
     dosage: 0,
     unit: 'mg',
@@ -40,13 +43,42 @@ export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
     isOngoing: false,
     instructions: '',
     condition: '',
-    prescribedBy: ''
+    prescribedBy: '',
+    frequency: 'daily',
+    selectedDays: []
   });
+
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (formData.dosage <= 0) {
+      newErrors.dosage = 'Dosage must be greater than 0';
+    }
+
+    if (!formData.isOngoing && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      if (end < start) {
+        newErrors.endDate = 'End date cannot be before start date';
+      }
+    }
+
+    if (formData.frequency === 'weekly' && formData.selectedDays.length === 0) {
+      newErrors.selectedDays = 'Please select at least one day';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    if (validate()) {
+      onSave(formData);
+      onClose();
+    }
   };
 
   const addTime = () => {
@@ -70,6 +102,17 @@ export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
     }));
   };
 
+  const toggleDay = (day: string) => {
+    setFormData(prev => {
+      const days = prev.selectedDays.includes(day)
+        ? prev.selectedDays.filter(d => d !== day)
+        : [...prev.selectedDays, day];
+      return { ...prev, selectedDays: days };
+    });
+  };
+
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)' }}>
       <div
@@ -82,7 +125,7 @@ export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
         }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2>Add Medication</h2>
+          <h2>{initialData ? 'Edit Medication' : 'Add Medication'}</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
@@ -117,9 +160,10 @@ export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
                 onChange={(e) => setFormData(prev => ({ ...prev, dosage: parseFloat(e.target.value) }))}
                 placeholder="1"
                 required
-                className="mt-2 h-11"
+                className={`mt-2 h-11 ${errors.dosage ? 'border-red-500' : ''}`}
                 style={{ backgroundColor: 'white' }}
               />
+              {errors.dosage && <p className="text-red-500 text-xs mt-1">{errors.dosage}</p>}
             </div>
             <div>
               <Label htmlFor="unit">Unit *</Label>
@@ -140,6 +184,46 @@ export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
               </Select>
             </div>
           </div>
+
+          {/* Frequency */}
+          <div>
+            <Label>Frequency *</Label>
+            <Select
+              value={formData.frequency}
+              onValueChange={(value: 'daily' | 'weekly') => setFormData(prev => ({ ...prev, frequency: value }))}
+            >
+              <SelectTrigger className="mt-2 h-11" style={{ backgroundColor: 'white' }}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Weekly Schedule */}
+          {formData.frequency === 'weekly' && (
+            <div>
+              <Label>Select Days *</Label>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {weekDays.map(day => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className={`h-10 w-10 rounded-full text-sm font-medium transition-colors ${formData.selectedDays.includes(day)
+                      ? 'bg-[#0F766E] text-white'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
+                  >
+                    {day.charAt(0)}
+                  </button>
+                ))}
+              </div>
+              {errors.selectedDays && <p className="text-red-500 text-xs mt-1">{errors.selectedDays}</p>}
+            </div>
+          )}
 
           {/* Reminder Times */}
           <div>
@@ -201,9 +285,10 @@ export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
                 value={formData.endDate || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value, isOngoing: false }))}
                 disabled={formData.isOngoing}
-                className="mt-2 h-11"
+                className={`mt-2 h-11 ${errors.endDate ? 'border-red-500' : ''}`}
                 style={{ backgroundColor: 'white' }}
               />
+              {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
             </div>
           </div>
 
@@ -274,7 +359,7 @@ export function AddMedicationForm({ onClose, onSave }: AddMedicationFormProps) {
               className="flex-1 h-11"
               style={{ backgroundColor: '#0F766E' }}
             >
-              Save Medication
+              {initialData ? 'Update Medication' : 'Save Medication'}
             </Button>
           </div>
         </form>

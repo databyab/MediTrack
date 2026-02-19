@@ -1,4 +1,4 @@
-import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle } from "lucide-react";
+import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle, Pencil } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
 interface Medication {
@@ -12,6 +12,8 @@ interface Medication {
   instructions?: string;
   condition?: string;
   prescribedBy?: string;
+  frequency: 'daily' | 'weekly';
+  selectedDays: string[];
 }
 
 interface DoseHistory {
@@ -30,12 +32,12 @@ interface DashboardProps {
   doseHistory: DoseHistory[];
   onMarkTaken: (medicationId: string, scheduledTime: string) => void;
   onMarkMissed: (medicationId: string, scheduledTime: string) => void;
+  onDeleteMedication?: (id: string) => void;
+  onEditMedication?: (medication: Medication) => void;
   lastSyncTime?: string;
 }
 
-export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime }: DashboardProps) {
-  const lastCheckedRef = useRef<string>('');
-
+export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication }: DashboardProps) {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -44,47 +46,21 @@ export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHi
   });
 
   const todayDate = new Date().toISOString().split('T')[0];
-
-  // Check for reminders
-  useEffect(() => {
-    const checkReminders = () => {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const currentTime = `${hours}:${minutes}`;
-
-      if (lastCheckedRef.current === currentTime) return; // Already checked this minute
-      lastCheckedRef.current = currentTime;
-
-      medications.forEach(med => {
-        if (med.times.includes(currentTime)) {
-          // Check if already taken today
-          const isTakenOrMissed = doseHistory.some(h =>
-            h.medicationId === med.id &&
-            h.scheduledTime === currentTime &&
-            h.date === todayDate
-          );
-
-          if (!isTakenOrMissed) {
-            // Show toast
-            toast.info(`Reminder: Take ${med.name} (${med.dosage} ${med.unit})`, {
-              duration: 10000,
-              action: {
-                label: 'Mark Taken',
-                onClick: () => onMarkTaken(med.id, currentTime)
-              }
-            });
-          }
-        }
-      });
-    };
-
-    const interval = setInterval(checkReminders, 10000); // Check every 10s
-    return () => clearInterval(interval);
-  }, [medications, doseHistory, todayDate, onMarkTaken]);
+  const currentDayShort = new Date().toLocaleDateString('en-US', { weekday: 'short' });
 
   // Get today's scheduled medications
-  const todaysMedications = medications.flatMap(med =>
+  const todaysMedications = medications.filter(med => {
+    // Check date range
+    if (todayDate < med.startDate) return false;
+    if (med.endDate && todayDate > med.endDate) return false;
+
+    // Check frequency
+    if (med.frequency === 'weekly') {
+      return med.selectedDays?.includes(currentDayShort);
+    }
+
+    return true; // Default to daily
+  }).flatMap(med =>
     med.times.map(time => ({
       ...med,
       scheduledTime: time,
@@ -100,6 +76,12 @@ export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHi
   // Calculate today's progress
   const totalDosesToday = todaysMedications.length;
   const takenDosesToday = todaysMedications.filter(m => m.isTaken).length;
+
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete ${name}?`)) {
+      onDeleteMedication?.(id);
+    }
+  };
 
   // If not logged in, show preview mode
   if (!user) {
@@ -201,6 +183,58 @@ export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHi
             <p style={{ fontSize: '12px', color: '#475569' }}>Active Meds</p>
           </div>
         </div>
+
+        {/* Your Medications Preview */}
+        <section className="mb-10">
+          <h2 className="mb-6">Your Medications</h2>
+          <div
+            className="rounded-[18px] p-6 lg:p-8"
+            style={{
+              backgroundColor: 'white',
+              border: '1px solid #E6EAF0'
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { id: '1', name: 'Vitamin D3', dosage: '1000', unit: 'IU' },
+                { id: '2', name: 'Amoxicillin', dosage: '500', unit: 'mg' },
+                { id: '3', name: 'Lisinopril', dosage: '10', unit: 'mg' }
+              ].map((med, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-4 rounded-xl border group"
+                  style={{
+                    borderColor: '#E6EAF0',
+                    backgroundColor: '#F7FAF9',
+                    opacity: 0.8
+                  }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-gray-100 flex-shrink-0">
+                      <Pill className="w-5 h-5 text-gray-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{med.name}</h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {med.dosage} {med.unit}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    disabled
+                    className="p-2 rounded-lg text-gray-300 cursor-not-allowed flex-shrink-0"
+                    title="Sign in to manage"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500">Sign in to manage your medications</p>
+            </div>
+          </div>
+        </section>
 
         {/* Sign In CTA */}
         <div className="text-center">
@@ -362,6 +396,65 @@ export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHi
                       {med.isTaken ? '✓ Completed' : '✕ Missed'}
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Your Medications Section (Delete Functionality) */}
+      <section className="mb-10">
+        <h2 className="mb-6">Your Medications</h2>
+        <div
+          className="rounded-[18px] p-6 lg:p-8"
+          style={{
+            backgroundColor: 'white',
+            border: '1px solid #E6EAF0'
+          }}
+        >
+          {medications.length === 0 ? (
+            <div className="text-center py-8">
+              <p style={{ color: '#475569' }}>No medications added yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {medications.map((med) => (
+                <div
+                  key={med.id}
+                  className="flex items-center justify-between p-4 rounded-xl border group"
+                  style={{
+                    borderColor: '#E6EAF0',
+                    backgroundColor: '#F7FAF9'
+                  }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-gray-100 flex-shrink-0">
+                      <Pill className="w-5 h-5 text-gray-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{med.name}</h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {med.dosage} {med.unit}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onEditMedication?.(med)}
+                      className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0"
+                      title="Edit medication"
+                    >
+                      <Pencil className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(med.id, med.name)}
+                      className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      title="Delete medication"
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

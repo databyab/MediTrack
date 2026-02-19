@@ -19,6 +19,8 @@ interface Medication {
   instructions?: string;
   condition?: string;
   prescribedBy?: string;
+  frequency: 'daily' | 'weekly';
+  selectedDays: string[];
 }
 
 interface DoseHistory {
@@ -38,6 +40,7 @@ export default function App() {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [doseHistory, setDoseHistory] = useState<DoseHistory[]>([]);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [editingMedication, setEditingMedication] = useState<Medication | null>(null);
 
   // Load user data when user logs in
   useEffect(() => {
@@ -84,7 +87,9 @@ export default function App() {
         endDate: m.end_date,
         instructions: m.instructions,
         condition: m.condition,
-        prescribedBy: m.prescribed_by
+        prescribedBy: m.prescribed_by,
+        frequency: m.frequency as 'daily' | 'weekly' || 'daily',
+        selectedDays: m.selected_days || []
       }));
 
       setMedications(formattedMeds);
@@ -153,7 +158,7 @@ export default function App() {
     }
 
     try {
-      const newMedication = {
+      const medicationData = {
         user_id: user.id,
         name: formData.name,
         dosage: formData.dosage,
@@ -163,32 +168,67 @@ export default function App() {
         end_date: formData.endDate,
         instructions: formData.instructions,
         condition: formData.condition,
-        prescribed_by: formData.prescribedBy
+        prescribed_by: formData.prescribedBy,
+        frequency: formData.frequency,
+        selected_days: formData.selectedDays
       };
 
-      const { data, error } = await supabase
-        .from('medications')
-        .insert([newMedication])
-        .select()
-        .single();
+      if (editingMedication) {
+        const { data, error } = await supabase
+          .from('medications')
+          .update(medicationData)
+          .eq('id', editingMedication.id)
+          .eq('user_id', user.id)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const formattedMed: Medication = {
-        id: data.id,
-        name: data.name,
-        dosage: data.dosage,
-        unit: data.unit,
-        times: data.times,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        instructions: data.instructions,
-        condition: data.condition,
-        prescribedBy: data.prescribed_by
-      };
+        const formattedMed: Medication = {
+          id: data.id,
+          name: data.name,
+          dosage: data.dosage,
+          unit: data.unit,
+          times: data.times,
+          startDate: data.start_date,
+          endDate: data.end_date,
+          instructions: data.instructions,
+          condition: data.condition,
+          prescribedBy: data.prescribed_by,
+          frequency: data.frequency as 'daily' | 'weekly',
+          selectedDays: data.selected_days || []
+        };
 
-      setMedications([...medications, formattedMed]);
-      toast.success(`${formData.name} added to your medications`);
+        setMedications(medications.map(m => m.id === editingMedication.id ? formattedMed : m));
+        toast.success(`${formData.name} updated successfully`);
+        setEditingMedication(null);
+      } else {
+        const { data, error } = await supabase
+          .from('medications')
+          .insert([medicationData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const formattedMed: Medication = {
+          id: data.id,
+          name: data.name,
+          dosage: data.dosage,
+          unit: data.unit,
+          times: data.times,
+          startDate: data.start_date,
+          endDate: data.end_date,
+          instructions: data.instructions,
+          condition: data.condition,
+          prescribedBy: data.prescribed_by,
+          frequency: data.frequency as 'daily' | 'weekly',
+          selectedDays: data.selected_days || []
+        };
+
+        setMedications([...medications, formattedMed]);
+        toast.success(`${formData.name} added to your medications`);
+      }
 
     } catch (error: any) {
       console.error('Error saving medication:', error);
@@ -292,6 +332,30 @@ export default function App() {
 
 
 
+  const handleDeleteMedication = async (medicationId: string) => {
+    if (!user) {
+      toast.error('Please sign in to delete medications');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('medications')
+        .delete()
+        .eq('id', medicationId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setMedications(medications.filter(m => m.id !== medicationId));
+      toast.success('Medication deleted successfully');
+
+    } catch (error: any) {
+      console.error('Error deleting medication:', error);
+      toast.error(`Failed to delete medication: ${error.message || 'Unknown error'}`);
+    }
+  };
+
   const handleSignInPrompt = () => {
     setShowAuth(true);
   };
@@ -348,6 +412,11 @@ export default function App() {
                 onMarkTaken={handleMarkTaken}
                 onMarkMissed={handleMarkMissed}
                 lastSyncTime={lastSyncTime}
+                onDeleteMedication={handleDeleteMedication}
+                onEditMedication={(med) => {
+                  setEditingMedication(med);
+                  setShowAddForm(true);
+                }}
               />
             ) : (
               <Reports
@@ -360,8 +429,25 @@ export default function App() {
 
             {showAddForm && user && (
               <AddMedicationForm
-                onClose={() => setShowAddForm(false)}
+                onClose={() => {
+                  setShowAddForm(false);
+                  setEditingMedication(null);
+                }}
                 onSave={handleSaveMedication}
+                initialData={editingMedication ? {
+                  name: editingMedication.name,
+                  dosage: editingMedication.dosage,
+                  unit: editingMedication.unit,
+                  times: editingMedication.times,
+                  startDate: editingMedication.startDate,
+                  endDate: editingMedication.endDate,
+                  isOngoing: !editingMedication.endDate,
+                  instructions: editingMedication.instructions,
+                  condition: editingMedication.condition,
+                  prescribedBy: editingMedication.prescribedBy,
+                  frequency: editingMedication.frequency,
+                  selectedDays: editingMedication.selectedDays
+                } : undefined}
               />
             )}
           </>

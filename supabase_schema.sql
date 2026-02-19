@@ -11,6 +11,8 @@ create table public.medications (
   instructions text,
   condition text,
   prescribed_by text,
+  frequency text default 'daily',
+  selected_days text[],
   created_at timestamptz default now()
 );
 
