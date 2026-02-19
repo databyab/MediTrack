@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navigation } from "@/app/components/Navigation";
-import { Dashboard } from "@/app/components/dashboard";
-import { Reports } from "@/app/components/reports";
+import { DashboardView } from "@/app/components/DashboardView";
+import { ReportsView } from "@/app/components/ReportsView";
 import { AddMedicationForm, MedicationFormData } from "@/app/components/AddMedicationForm";
 import { AuthScreen } from "@/app/components/AuthScreen";
 import { useAuth } from "@/context/AuthContext";
@@ -403,7 +403,7 @@ export default function App() {
             />
 
             {activeView === 'dashboard' ? (
-              <Dashboard
+              <DashboardView
                 medications={medications}
                 onAddMedication={() => user ? setShowAddForm(true) : setShowAuth(true)}
                 user={userForComponents}
@@ -419,7 +419,7 @@ export default function App() {
                 }}
               />
             ) : (
-              <Reports
+              <ReportsView
                 medications={medications}
                 doseHistory={doseHistory}
                 user={userForComponents}

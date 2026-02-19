@@ -37,7 +37,7 @@ interface DashboardProps {
   lastSyncTime?: string;
 }
 
-export function Dashboard({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication }: DashboardProps) {
+export function DashboardView({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication }: DashboardProps) {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',

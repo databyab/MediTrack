@@ -29,7 +29,7 @@ interface ReportsProps {
   onSignIn: () => void;
 }
 
-export function Reports({ medications, doseHistory, user, onSignIn }: ReportsProps) {
+export function ReportsView({ medications, doseHistory, user, onSignIn }: ReportsProps) {
   // If not logged in, show auth prompt
   if (!user) {
     return (
