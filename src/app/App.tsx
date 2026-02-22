@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Plus, Pill, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/app/components/ui/button";
 import { Navigation } from "@/app/components/Navigation";
 import { DashboardView } from "@/app/components/DashboardView";
 import { ReportsView } from "@/app/components/ReportsView";
@@ -19,7 +21,7 @@ interface Medication {
   instructions?: string;
   condition?: string;
   prescribedBy?: string;
-  frequency: 'daily' | 'weekly';
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'every-other-day';
   selectedDays: string[];
 }
 
@@ -34,7 +36,7 @@ interface DoseHistory {
 
 export default function App() {
   const { user, loading, signOut, signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
-  const [activeView, setActiveView] = useState<'dashboard' | 'reports'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'reports' | 'manage'>('dashboard');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [medications, setMedications] = useState<Medication[]>([]);
@@ -88,7 +90,7 @@ export default function App() {
         instructions: m.instructions,
         condition: m.condition,
         prescribedBy: m.prescribed_by,
-        frequency: m.frequency as 'daily' | 'weekly' || 'daily',
+        frequency: m.frequency as any || 'daily',
         selectedDays: m.selected_days || []
       }));
 
@@ -195,7 +197,7 @@ export default function App() {
           instructions: data.instructions,
           condition: data.condition,
           prescribedBy: data.prescribed_by,
-          frequency: data.frequency as 'daily' | 'weekly',
+          frequency: data.frequency as any,
           selectedDays: data.selected_days || []
         };
 
@@ -222,7 +224,7 @@ export default function App() {
           instructions: data.instructions,
           condition: data.condition,
           prescribedBy: data.prescribed_by,
-          frequency: data.frequency as 'daily' | 'weekly',
+          frequency: data.frequency as any,
           selectedDays: data.selected_days || []
         };
 
@@ -418,13 +420,83 @@ export default function App() {
                   setShowAddForm(true);
                 }}
               />
-            ) : (
+            ) : activeView === 'reports' ? (
               <ReportsView
                 medications={medications}
                 doseHistory={doseHistory}
                 user={userForComponents}
                 onSignIn={handleSignInPrompt}
               />
+            ) : (
+              <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-10">
+                <div className="flex items-center justify-between mb-8">
+                  <h1 style={{ color: '#0F172A' }}>Manage Medications</h1>
+                  <Button
+                    onClick={() => setShowAddForm(true)}
+                    style={{ backgroundColor: '#0F766E' }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {medications.length === 0 ? (
+                    <div className="col-span-full text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+                      <Pill className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-gray-500">No medications found. Add one to get started.</p>
+                    </div>
+                  ) : (
+                    medications.map(med => (
+                      <div
+                        key={med.id}
+                        className="bg-white p-6 rounded-2xl border transition-all hover:shadow-md"
+                        style={{ borderColor: '#E6EAF0' }}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F7FAF9' }}>
+                            <Pill className="w-6 h-6" style={{ color: '#0F766E' }} />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingMedication(med);
+                                setShowAddForm(true);
+                              }}
+                              className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors"
+                            >
+                              <Pencil className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to delete ${med.name}?`)) {
+                                  handleDeleteMedication(med.id);
+                                }
+                              }}
+                              className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">{med.name}</h3>
+                        <p className="text-sm text-gray-500 mb-4">{med.dosage} {med.unit} • {med.frequency}</p>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Schedule</span>
+                            <span className="font-medium text-gray-700">{med.times.join(', ')}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Started</span>
+                            <span className="font-medium text-gray-700">{med.startDate}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             )}
 
             {showAddForm && user && (

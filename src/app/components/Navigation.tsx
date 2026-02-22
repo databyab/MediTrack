@@ -1,6 +1,6 @@
 import { Plus, LogOut, User } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import { Logo } from "@/app/components/logo";
+import { Logo } from "@/app/components/Logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,8 +11,8 @@ import {
 
 interface NavigationProps {
   onAddMedication: () => void;
-  activeView: 'dashboard' | 'reports';
-  onViewChange: (view: 'dashboard' | 'reports') => void;
+  activeView: 'dashboard' | 'reports' | 'manage';
+  onViewChange: (view: 'dashboard' | 'reports' | 'manage') => void;
   user: { email: string } | null;
   onLogout: () => void;
 }
@@ -45,6 +45,16 @@ export function Navigation({ onAddMedication, activeView, onViewChange, user, on
                 }}
               >
                 Reports
+              </button>
+              <button
+                onClick={() => onViewChange('manage')}
+                className="px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base"
+                style={{
+                  backgroundColor: activeView === 'manage' ? '#F7FAF9' : 'transparent',
+                  color: activeView === 'manage' ? '#0F766E' : '#475569'
+                }}
+              >
+                Manage
               </button>
             </div>
           )}
@@ -116,6 +126,18 @@ export function Navigation({ onAddMedication, activeView, onViewChange, user, on
               }}
             >
               Reports
+            </button>
+            <button
+              onClick={() => onViewChange('manage')}
+              className="flex-1 py-3 text-center text-sm transition-colors"
+              style={{
+                backgroundColor: activeView === 'manage' ? '#F7FAF9' : 'transparent',
+                color: activeView === 'manage' ? '#0F766E' : '#475569',
+                fontWeight: activeView === 'manage' ? 600 : 400,
+                borderBottom: activeView === 'manage' ? '2px solid #0F766E' : '2px solid transparent'
+              }}
+            >
+              Manage
             </button>
           </div>
         </div>

@@ -12,6 +12,8 @@ interface Medication {
   instructions?: string;
   condition?: string;
   prescribedBy?: string;
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'every-other-day';
+  selectedDays: string[];
 }
 
 interface DoseHistory {

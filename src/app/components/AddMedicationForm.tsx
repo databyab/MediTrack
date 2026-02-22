@@ -29,7 +29,7 @@ export interface MedicationFormData {
   instructions?: string;
   condition?: string;
   prescribedBy?: string;
-  frequency: 'daily' | 'weekly';
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'every-other-day';
   selectedDays: string[];
 }
 
@@ -190,7 +190,7 @@ export function AddMedicationForm({ onClose, onSave, initialData }: AddMedicatio
             <Label>Frequency *</Label>
             <Select
               value={formData.frequency}
-              onValueChange={(value: 'daily' | 'weekly') => setFormData(prev => ({ ...prev, frequency: value }))}
+              onValueChange={(value: any) => setFormData(prev => ({ ...prev, frequency: value }))}
             >
               <SelectTrigger className="mt-2 h-11" style={{ backgroundColor: 'white' }}>
                 <SelectValue />
@@ -198,6 +198,9 @@ export function AddMedicationForm({ onClose, onSave, initialData }: AddMedicatio
               <SelectContent>
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="every-other-day">Every Other Day</SelectItem>
+                <SelectItem value="bi-weekly">Bi-weekly (Every 2 weeks)</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
               </SelectContent>
             </Select>
           </div>

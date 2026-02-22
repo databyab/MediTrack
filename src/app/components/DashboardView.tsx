@@ -12,7 +12,7 @@ interface Medication {
   instructions?: string;
   condition?: string;
   prescribedBy?: string;
-  frequency: 'daily' | 'weekly';
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'every-other-day';
   selectedDays: string[];
 }
 
@@ -57,6 +57,26 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
     // Check frequency
     if (med.frequency === 'weekly') {
       return med.selectedDays?.includes(currentDayShort);
+    }
+
+    const start = new Date(med.startDate);
+    const current = new Date(todayDate);
+    const diffTime = Math.abs(current.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (med.frequency === 'every-other-day') {
+      return diffDays % 2 === 0;
+    }
+
+    if (med.frequency === 'bi-weekly') {
+      // Every 2 weeks on the same day of the week as start date
+      const isCorrectDay = current.getDay() === start.getDay();
+      const weeksBetween = Math.floor(diffDays / 7);
+      return isCorrectDay && weeksBetween % 2 === 0;
+    }
+
+    if (med.frequency === 'monthly') {
+      return current.getDate() === start.getDate();
     }
 
     return true; // Default to daily
