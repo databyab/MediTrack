@@ -37,19 +37,13 @@ export function MedicineInfoModal({ medicationName, onClose }: MedicineInfoModal
             try {
                 console.log("MediTrack AI: Fetching info for:", medicationName);
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({
-                    model: "gemini-1.5-flash",
-                    generationConfig: {
-                        temperature: 0.1,
-                        topP: 0.95,
-                        topK: 40,
-                        maxOutputTokens: 1024,
-                        responseMimeType: "application/json",
-                    }
-                });
+
+                // Use a simpler approach that defaults to the stable v1 API
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
                 const prompt = `Provide detailed medical and usage information about the medication "${medicationName}". 
-                Respond in JSON format with exactly these keys:
+                Respond ONLY with a JSON object. Do not include markdown formatting or backticks.
+                Required structure:
                 {
                   "description": "Short summary",
                   "uses": ["list of uses"],
@@ -61,48 +55,46 @@ export function MedicineInfoModal({ medicationName, onClose }: MedicineInfoModal
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
 
-                // If it's blocked by safety, .text() will throw
                 let textResponse = "";
                 try {
                     textResponse = response.text();
                 } catch (safetyErr) {
                     console.error("MediTrack AI: Blocked by safety filter", response);
-                    throw new Error("This medication name triggered a safety filter. Please check the spelling or try another.");
+                    throw new Error("Safety Filter: This medication name is blocked for AI response.");
                 }
 
                 if (!textResponse) {
-                    throw new Error("The AI returned an empty response. Please try again.");
+                    throw new Error("Empty response from AI.");
                 }
 
                 console.log("MediTrack AI: Raw response received");
 
+                // More robust JSON parsing
                 try {
-                    const parsedData = JSON.parse(textResponse);
+                    // Try to clean backticks if AI included them despite instructions
+                    const cleanedText = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+                    const parsedData = JSON.parse(cleanedText);
                     setDetails(parsedData);
                 } catch (jsonErr) {
-                    console.warn("MediTrack AI: JSON.parse failed, trying regex fallback", textResponse);
                     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
                     if (jsonMatch) {
                         setDetails(JSON.parse(jsonMatch[0]));
                     } else {
-                        throw new Error("Could not parse the AI's medical data format.");
+                        throw new Error("Could not parse AI response.");
                     }
                 }
             } catch (err: any) {
                 console.error("MediTrack AI Full Error:", err);
 
+                // If 1.5-flash fails with 404, we could try a fallback, but let's first report the clean error
                 const errorMessage = err.message || "";
 
-                if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("403")) {
-                    setError("Invalid Gemini API Key. Please verify the key in your .env file.");
-                } else if (errorMessage.includes("fetch failed") || errorMessage.includes("NetworkError")) {
-                    setError("Network connection issue. Please check your internet.");
-                } else if (errorMessage.includes("safety")) {
-                    setError("Safety Filter: Could not retrieve info for this specific term.");
-                } else if (errorMessage.includes("quota")) {
-                    setError("API Quota exceeded. Please wait a moment and try again.");
+                if (errorMessage.includes("404") || errorMessage.includes("not found")) {
+                    setError("Model error: Gemini 1.5 Flash is not available for this API key. Try checking your Google AI Studio project settings.");
+                } else if (errorMessage.includes("API_KEY_INVALID")) {
+                    setError("Invalid API Key. Please verify the key in your .env file.");
                 } else {
-                    setError(errorMessage || "AI service is currently unavailable. Please try again later.");
+                    setError(errorMessage || "AI service error. Please try again.");
                 }
             } finally {
                 setLoading(false);
