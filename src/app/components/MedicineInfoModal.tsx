@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Pill, ShieldAlert, BookOpen, Clock, Activity, Loader2, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface MedicineInfoModalProps {
     medicationName: string;
@@ -27,54 +28,82 @@ export function MedicineInfoModal({ medicationName, onClose }: MedicineInfoModal
 
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-            if (!apiKey) {
-                setError("Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your .env file.");
+            if (!apiKey || apiKey === "your_gemini_api_key_here") {
+                setError("Gemini API Key is missing or invalid. Please check your .env file and restart the dev server.");
                 setLoading(false);
                 return;
             }
 
             try {
-                const prompt = `Provide detailed information about the medication "${medicationName}". 
-        Return the response in JSON format with the following structure:
-        {
-          "description": "Brief overview of what the medicine is",
-          "uses": ["use 1", "use 2"],
-          "sideEffects": ["effect 1", "effect 2"],
-          "precautions": ["precaution 1", "precaution 2"],
-          "dosageInfo": "General dosage information"
-        }
-        Important: Provide only the JSON object, no other text. Be concise and accurate. Mention it's for informational purposes only.`;
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: prompt }]
-                        }]
-                    })
+                console.log("MediTrack AI: Fetching info for:", medicationName);
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const model = genAI.getGenerativeModel({
+                    model: "gemini-1.5-flash",
+                    generationConfig: {
+                        temperature: 0.1,
+                        topP: 0.95,
+                        topK: 40,
+                        maxOutputTokens: 1024,
+                        responseMimeType: "application/json",
+                    }
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to fetch from Gemini API');
+                const prompt = `Provide detailed medical and usage information about the medication "${medicationName}". 
+                Respond in JSON format with exactly these keys:
+                {
+                  "description": "Short summary",
+                  "uses": ["list of uses"],
+                  "sideEffects": ["list of effects"],
+                  "precautions": ["list of precautions"],
+                  "dosageInfo": "General guidance"
+                }`;
+
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+
+                // If it's blocked by safety, .text() will throw
+                let textResponse = "";
+                try {
+                    textResponse = response.text();
+                } catch (safetyErr) {
+                    console.error("MediTrack AI: Blocked by safety filter", response);
+                    throw new Error("This medication name triggered a safety filter. Please check the spelling or try another.");
                 }
 
-                const data = await response.json();
-                const textResponse = data.candidates[0].content.parts[0].text;
+                if (!textResponse) {
+                    throw new Error("The AI returned an empty response. Please try again.");
+                }
 
-                // Extract JSON from the response (sometimes Gemini wraps it in code blocks)
-                const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    const parsedData = JSON.parse(jsonMatch[0]);
+                console.log("MediTrack AI: Raw response received");
+
+                try {
+                    const parsedData = JSON.parse(textResponse);
                     setDetails(parsedData);
-                } else {
-                    throw new Error('Could not parse AI response');
+                } catch (jsonErr) {
+                    console.warn("MediTrack AI: JSON.parse failed, trying regex fallback", textResponse);
+                    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        setDetails(JSON.parse(jsonMatch[0]));
+                    } else {
+                        throw new Error("Could not parse the AI's medical data format.");
+                    }
                 }
-            } catch (err) {
-                console.error("Error fetching medicine info:", err);
-                setError("Couldn't retrieve information for this medication. Please try again later.");
+            } catch (err: any) {
+                console.error("MediTrack AI Full Error:", err);
+
+                const errorMessage = err.message || "";
+
+                if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("403")) {
+                    setError("Invalid Gemini API Key. Please verify the key in your .env file.");
+                } else if (errorMessage.includes("fetch failed") || errorMessage.includes("NetworkError")) {
+                    setError("Network connection issue. Please check your internet.");
+                } else if (errorMessage.includes("safety")) {
+                    setError("Safety Filter: Could not retrieve info for this specific term.");
+                } else if (errorMessage.includes("quota")) {
+                    setError("API Quota exceeded. Please wait a moment and try again.");
+                } else {
+                    setError(errorMessage || "AI service is currently unavailable. Please try again later.");
+                }
             } finally {
                 setLoading(false);
             }
