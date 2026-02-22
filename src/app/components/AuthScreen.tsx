@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Logo } from "@/app/components/logo";
+import { Logo } from "@/app/components/Logo";
 
 interface AuthScreenProps {
   onLogin: (email: string, password: string) => void;
