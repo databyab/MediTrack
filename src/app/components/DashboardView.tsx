@@ -1,4 +1,4 @@
-import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle, Pencil } from "lucide-react";
+import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle, Pencil, Info } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
 interface Medication {
@@ -34,10 +34,11 @@ interface DashboardProps {
   onMarkMissed: (medicationId: string, scheduledTime: string) => void;
   onDeleteMedication?: (id: string) => void;
   onEditMedication?: (medication: Medication) => void;
+  onShowInfo?: (medicationName: string) => void;
   lastSyncTime?: string;
 }
 
-export function DashboardView({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication }: DashboardProps) {
+export function DashboardView({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication, onShowInfo }: DashboardProps) {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -397,6 +398,13 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
                   {!med.isTaken && !med.isMissed ? (
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => onShowInfo?.(med.name)}
+                        className="p-2 rounded-lg hover:bg-teal-50 text-teal-600 border border-teal-100 transition-colors"
+                        title="Medicine Info"
+                      >
+                        <Info className="w-5 h-5" />
+                      </button>
+                      <button
                         onClick={() => onMarkTaken(med.id, med.scheduledTime)}
                         className="px-4 py-2 rounded-lg text-sm font-medium"
                         style={{ backgroundColor: '#0F766E', color: 'white' }}
@@ -459,7 +467,14 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 items-center">
+                    <button
+                      onClick={() => onShowInfo?.(med.name)}
+                      className="p-2 rounded-lg hover:bg-teal-50 text-gray-400 hover:text-teal-600 transition-colors flex-shrink-0"
+                      title="Medicine Info"
+                    >
+                      <Info className="w-5 h-5" />
+                    </button>
                     <button
                       onClick={() => onEditMedication?.(med)}
                       className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0"

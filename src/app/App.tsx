@@ -5,6 +5,7 @@ import { Navigation } from "@/app/components/Navigation";
 import { DashboardView } from "@/app/components/DashboardView";
 import { ReportsView } from "@/app/components/ReportsView";
 import { AddMedicationForm, MedicationFormData } from "@/app/components/AddMedicationForm";
+import { MedicineInfoModal } from "@/app/components/MedicineInfoModal";
 import { AuthScreen } from "@/app/components/AuthScreen";
 import { useAuth } from "@/context/AuthContext";
 import { toast, Toaster } from "sonner";
@@ -43,6 +44,7 @@ export default function App() {
   const [doseHistory, setDoseHistory] = useState<DoseHistory[]>([]);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [editingMedication, setEditingMedication] = useState<Medication | null>(null);
+  const [selectedMedInfo, setSelectedMedInfo] = useState<string | null>(null);
 
   // Load user data when user logs in
   useEffect(() => {
@@ -419,6 +421,7 @@ export default function App() {
                   setEditingMedication(med);
                   setShowAddForm(true);
                 }}
+                onShowInfo={(name) => setSelectedMedInfo(name)}
               />
             ) : activeView === 'reports' ? (
               <ReportsView
@@ -520,6 +523,13 @@ export default function App() {
                   frequency: editingMedication.frequency,
                   selectedDays: editingMedication.selectedDays
                 } : undefined}
+              />
+            )}
+
+            {selectedMedInfo && (
+              <MedicineInfoModal
+                medicationName={selectedMedInfo}
+                onClose={() => setSelectedMedInfo(null)}
               />
             )}
           </>
