@@ -2,7 +2,7 @@
 
 MediTrack is a premium, AI-powered medication tracking application designed to help users stay on top of their health with ease. Built with **React**, **TypeScript**, and **Supabase**, it features a sleek SaaS-style interface and secure AI-driven medical insights via **Groq**.
 
-![MediTrack Header](https://raw.githubusercontent.com/databyab/MediTrack/main/public/og-image.png)
+LIVE: https://meditrack.databyab.in/
 
 ## ✨ Key Features
 
