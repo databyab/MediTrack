@@ -26,7 +26,7 @@ export function MedicineAIInfo({ medicationName }: MedicineAIInfoProps) {
             setError(null);
 
             try {
-                // Call Supabase Edge Function instead of direct Gemini SDK
+                // Call Supabase Edge Function instead of direct Groq SDK
                 const { data, error: functionError } = await supabase.functions.invoke('get-medicine-info', {
                     body: { medicationName }
                 });

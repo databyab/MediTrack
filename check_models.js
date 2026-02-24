@@ -1,26 +1,36 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
+import OpenAI from "openai";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 async function check() {
-    const envContent = fs.readFileSync(".env", "utf8");
-    const apiKeyMatch = envContent.match(/VITE_GEMINI_API_KEY=(.*)/);
-    const apiKey = apiKeyMatch ? apiKeyMatch[1].trim() : null;
+    const apiKey = process.env.GROQ_API_KEY;
 
-    if (!apiKey) {
-        console.error("VITE_GEMINI_API_KEY not found in .env");
+    if (!apiKey || apiKey === 'your_groq_api_key_here') {
+        console.error("GROQ_API_KEY not found in .env");
         return;
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro", "gemini-2.0-flash-exp"];
+    const groq = new OpenAI({
+        apiKey: apiKey,
+        baseURL: "https://api.groq.com/openai/v1",
+    });
 
-    console.log("Probing models for your API key...");
+    const models = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it"
+    ];
+
+    console.log("Probing Groq models for your API key...");
     for (const m of models) {
         try {
-            const model = genAI.getGenerativeModel({ model: m });
-            // Use a very simple prompt
-            const result = await model.generateContent("test");
-            await result.response;
+            const completion = await groq.chat.completions.create({
+                messages: [{ role: "user", content: "test" }],
+                model: m,
+                max_tokens: 5
+            });
             console.log(`✅ ${m}: AVAILABLE`);
         } catch (e) {
             console.log(`❌ ${m}: UNAVAILABLE (${e.message.split('\n')[0]})`);

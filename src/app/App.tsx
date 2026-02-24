@@ -414,11 +414,6 @@ export default function App() {
                 onMarkTaken={handleMarkTaken}
                 onMarkMissed={handleMarkMissed}
                 lastSyncTime={lastSyncTime}
-                onDeleteMedication={handleDeleteMedication}
-                onEditMedication={(med) => {
-                  setEditingMedication(med);
-                  setShowAddForm(true);
-                }}
               />
             ) : activeView === 'reports' ? (
               <ReportsView

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.1"
+import OpenAI from "https://esm.sh/openai@4.28.0"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -22,19 +22,22 @@ serve(async (req) => {
             )
         }
 
-        const apiKey = Deno.env.get('GEMINI_API_KEY')
+        const apiKey = Deno.env.get('GROQ_API_KEY')
         if (!apiKey) {
             return new Response(
-                JSON.stringify({ error: 'Gemini API Key is not configured in Edge Function' }),
+                JSON.stringify({ error: 'Groq API Key (GROQ_API_KEY) is not configured in Edge Function' }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
             )
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+        const groq = new OpenAI({
+            apiKey: apiKey,
+            baseURL: "https://api.groq.com/openai/v1",
+        })
 
-        const prompt = `Provide detailed medical and usage information about the medication "${medicationName}". 
-    Respond ONLY with a JSON object. Do not include markdown formatting or backticks.
+        const systemPrompt = "You are a professional medical assistant. You provide structured, accurate information about medications. You must respond ONLY with a valid JSON object."
+
+        const userPrompt = `Provide detailed medical and usage information about the medication "${medicationName}". 
     Required structure:
     {
       "description": "Short summary",
@@ -44,30 +47,23 @@ serve(async (req) => {
       "dosageInfo": "General guidance"
     }`
 
-        const result = await model.generateContent(prompt)
-        const response = await result.response
-        const textResponse = response.text()
+        const completion = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ],
+            response_format: { type: "json_object" },
+        })
 
-        // More robust JSON parsing
-        let parsedData
-        try {
-            const cleanedText = textResponse.replace(/```json/g, "").replace(/```/g, "").trim()
-            parsedData = JSON.parse(cleanedText)
-        } catch (jsonErr) {
-            const jsonMatch = textResponse.match(/\{[\s\S]*\}/)
-            if (jsonMatch) {
-                parsedData = JSON.parse(jsonMatch[0])
-            } else {
-                throw new Error("Could not parse AI response.")
-            }
-        }
+        const resultText = completion.choices[0].message.content
 
         return new Response(
-            JSON.stringify(parsedData),
+            resultText,
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Edge Function Error:', error.message)
         return new Response(
             JSON.stringify({ error: error.message }),
@@ -75,3 +71,4 @@ serve(async (req) => {
         )
     }
 })
+

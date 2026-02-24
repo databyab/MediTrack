@@ -1,33 +1,36 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import fs from "fs";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 async function check() {
     try {
-        const envContent = fs.readFileSync(".env", "utf8");
-        const apiKeyMatch = envContent.match(/VITE_GEMINI_API_KEY=(.*)/);
-        const apiKey = apiKeyMatch ? apiKeyMatch[1].trim() : null;
+        const apiKey = process.env.GROQ_API_KEY;
 
-        if (!apiKey) {
-            console.error("VITE_GEMINI_API_KEY not found in .env");
+        if (!apiKey || apiKey === 'your_groq_api_key_here') {
+            console.error("GROQ_API_KEY not found in .env or is still the placeholder.");
             return;
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
+        const groq = new OpenAI({
+            apiKey: apiKey,
+            baseURL: "https://api.groq.com/openai/v1",
+        });
 
-        // Attempt to list all models available to this key
-        // Note: Use a try-catch because some keys might not have permission to list
-        console.log("Fetching list of all models available to your key...");
+        console.log("Fetching list of all models available on Groq...");
 
-        // In newer SDKs, listModels is an async generator or a function
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`);
+        const response = await fetch("https://api.groq.com/openai/v1/models", {
+            headers: {
+                "Authorization": `Bearer ${apiKey}`
+            }
+        });
         const data = await response.json();
 
-        if (data.models) {
-            console.log("Total models found:", data.models.length);
-            data.models.forEach(m => {
-                if (m.supportedGenerationMethods.includes("generateContent")) {
-                    console.log(`- ${m.name} (ID: ${m.name.split('/').pop()})`);
-                }
+        if (data.data) {
+            console.log("Total models found:", data.data.length);
+            data.data.forEach(m => {
+                console.log(`- ${m.id}`);
             });
         } else {
             console.log("No models returned. API Key Response:", JSON.stringify(data));

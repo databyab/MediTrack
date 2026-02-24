@@ -1,4 +1,4 @@
-import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle, Pencil, Info, ChevronUp } from "lucide-react";
+import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle, Info, ChevronUp } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { useState } from "react";
 import { MedicineAIInfo } from "./MedicineAIInfo";
@@ -35,14 +35,11 @@ interface DashboardProps {
   doseHistory: DoseHistory[];
   onMarkTaken: (medicationId: string, scheduledTime: string) => void;
   onMarkMissed: (medicationId: string, scheduledTime: string) => void;
-  onDeleteMedication?: (id: string) => void;
-  onEditMedication?: (medication: Medication) => void;
   lastSyncTime?: string;
 }
 
-export function DashboardView({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication }: DashboardProps) {
+export function DashboardView({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime }: DashboardProps) {
   const [expandedToday, setExpandedToday] = useState<string | null>(null);
-  const [expandedYourMeds, setExpandedYourMeds] = useState<string | null>(null);
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -90,10 +87,10 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
       ...med,
       scheduledTime: time,
       isTaken: doseHistory.some(
-        h => h.medicationId === med.id && h.scheduledTime === time && h.date === todayDate && (h.status === 'taken' || !h.status)
+        (h: DoseHistory) => h.medicationId === med.id && h.scheduledTime === time && h.date === todayDate && (h.status === 'taken' || !h.status)
       ),
       isMissed: doseHistory.some(
-        h => h.medicationId === med.id && h.scheduledTime === time && h.date === todayDate && h.status === 'missed'
+        (h: DoseHistory) => h.medicationId === med.id && h.scheduledTime === time && h.date === todayDate && h.status === 'missed'
       )
     }))
   ).sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
@@ -102,11 +99,6 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
   const totalDosesToday = todaysMedications.length;
   const takenDosesToday = todaysMedications.filter(m => m.isTaken).length;
 
-  const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete ${name}?`)) {
-      onDeleteMedication?.(id);
-    }
-  };
 
   // If not logged in, show preview mode
   if (!user) {
@@ -208,58 +200,6 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
             <p style={{ fontSize: '12px', color: '#475569' }}>Active Meds</p>
           </div>
         </div>
-
-        {/* Your Medications Preview */}
-        <section className="mb-10">
-          <h2 className="mb-6">Your Medications</h2>
-          <div
-            className="rounded-[18px] p-6 lg:p-8"
-            style={{
-              backgroundColor: 'white',
-              border: '1px solid #E6EAF0'
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { id: '1', name: 'Vitamin D3', dosage: '1000', unit: 'IU' },
-                { id: '2', name: 'Amoxicillin', dosage: '500', unit: 'mg' },
-                { id: '3', name: 'Lisinopril', dosage: '10', unit: 'mg' }
-              ].map((med, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-4 rounded-xl border group"
-                  style={{
-                    borderColor: '#E6EAF0',
-                    backgroundColor: '#F7FAF9',
-                    opacity: 0.8
-                  }}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-gray-100 flex-shrink-0">
-                      <Pill className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{med.name}</h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {med.dosage} {med.unit}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    disabled
-                    className="p-2 rounded-lg text-gray-300 cursor-not-allowed flex-shrink-0"
-                    title="Sign in to manage"
-                  >
-                    <XCircle className="w-5 h-5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-500">Sign in to manage your medications</p>
-            </div>
-          </div>
-        </section>
 
         {/* Sign In CTA */}
         <div className="text-center">
@@ -441,79 +381,6 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
                   </div>
                   <AnimatePresence>
                     {expandedToday === `${med.id}-${idx}` && (
-                      <MedicineAIInfo medicationName={med.name} />
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Your Medications Section (Delete Functionality) */}
-      <section className="mb-10">
-        <h2 className="mb-6">Your Medications</h2>
-        <div
-          className="rounded-[18px] p-6 lg:p-8"
-          style={{
-            backgroundColor: 'white',
-            border: '1px solid #E6EAF0'
-          }}
-        >
-          {medications.length === 0 ? (
-            <div className="text-center py-8">
-              <p style={{ color: '#475569' }}>No medications added yet.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {medications.map((med) => (
-                <div
-                  key={med.id}
-                  className="p-4 rounded-xl border group flex flex-col"
-                  style={{
-                    borderColor: '#E6EAF0',
-                    backgroundColor: '#F7FAF9'
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-gray-100 flex-shrink-0">
-                        <Pill className="w-5 h-5 text-gray-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate">{med.name}</h3>
-                        <p className="text-xs text-gray-500 truncate">
-                          {med.dosage} {med.unit}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 items-center">
-                      <button
-                        onClick={() => setExpandedYourMeds(expandedYourMeds === med.id ? null : med.id)}
-                        className={`p-2 rounded-lg border transition-all ${expandedYourMeds === med.id ? 'bg-teal-600 text-white border-teal-600' : 'hover:bg-teal-50 text-gray-400 hover:text-teal-600 border-transparent'}`}
-                        title="AI Medicine Info"
-                      >
-                        {expandedYourMeds === med.id ? <ChevronUp className="w-5 h-5" /> : <Info className="w-5 h-5" />}
-                      </button>
-                      <button
-                        onClick={() => onEditMedication?.(med)}
-                        className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0"
-                        title="Edit medication"
-                      >
-                        <Pencil className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(med.id, med.name)}
-                        className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
-                        title="Delete medication"
-                      >
-                        <XCircle className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                  <AnimatePresence>
-                    {expandedYourMeds === med.id && (
                       <MedicineAIInfo medicationName={med.name} />
                     )}
                   </AnimatePresence>
