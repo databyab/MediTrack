@@ -53,8 +53,8 @@ export function AddMedicationForm({ onClose, onSave, initialData }: AddMedicatio
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (formData.dosage <= 0) {
-      newErrors.dosage = 'Dosage must be greater than 0';
+    if (formData.dosage < 0) {
+      newErrors.dosage = 'Dosage cannot be negative';
     }
 
     if (!formData.isOngoing && formData.endDate) {
@@ -276,7 +276,15 @@ export function AddMedicationForm({ onClose, onSave, initialData }: AddMedicatio
                 id="startDate"
                 type="date"
                 value={formData.startDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                onChange={(e) => {
+                  const newStart = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    startDate: newStart,
+                    // If start date moves past end date, adjust end date
+                    endDate: (prev.endDate && prev.endDate < newStart) ? newStart : prev.endDate
+                  }));
+                }}
                 required
                 className="mt-2 h-11"
                 style={{ backgroundColor: 'white' }}
@@ -287,6 +295,7 @@ export function AddMedicationForm({ onClose, onSave, initialData }: AddMedicatio
               <Input
                 id="endDate"
                 type="date"
+                min={formData.startDate}
                 value={formData.endDate || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value, isOngoing: false }))}
                 disabled={formData.isOngoing}
