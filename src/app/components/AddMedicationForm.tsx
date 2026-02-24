@@ -156,8 +156,10 @@ export function AddMedicationForm({ onClose, onSave, initialData }: AddMedicatio
               <Input
                 id="dosage"
                 type="number"
+                min="0"
+                step="any"
                 value={formData.dosage || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, dosage: parseFloat(e.target.value) }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, dosage: parseFloat(e.target.value) || 0 }))}
                 placeholder="1"
                 required
                 className={`mt-2 h-11 ${errors.dosage ? 'border-red-500' : ''}`}

@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import OpenAI from "https://esm.sh/openai@4.28.0"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -13,50 +12,73 @@ serve(async (req) => {
     }
 
     try {
-        const { medicationName } = await req.json()
+        const body = await req.json()
+        let { medicationName } = body
 
-        if (!medicationName) {
+        // 🛡️ Security: Basic Sanitization
+        if (typeof medicationName !== 'string') {
+            throw new Error('Invalid medication name format')
+        }
+
+        // Limit length and strip potentially dangerous characters
+        medicationName = medicationName.trim().substring(0, 50).replace(/[<>{}[\]\\^`|]/g, '')
+
+        console.log(`Analyzing medication: ${medicationName}`)
+
+        if (!medicationName || medicationName.length < 2) {
             return new Response(
-                JSON.stringify({ error: 'Medication name is required' }),
+                JSON.stringify({ error: 'Valid medication name is required (min 2 chars)' }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
             )
         }
 
         const apiKey = Deno.env.get('GROQ_API_KEY')
         if (!apiKey) {
+            console.error("GROQ_API_KEY is missing from environment")
             return new Response(
-                JSON.stringify({ error: 'Groq API Key (GROQ_API_KEY) is not configured in Edge Function' }),
+                JSON.stringify({ error: 'Groq API Key is not configured in Edge Function' }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
             )
         }
 
-        const groq = new OpenAI({
-            apiKey: apiKey,
-            baseURL: "https://api.groq.com/openai/v1",
+        const systemPrompt = "You are a professional medical assistant. Respond only in JSON."
+        const userPrompt = `Provide medical info about "${medicationName}":
+        {
+          "description": "Short summary",
+          "uses": ["list"],
+          "sideEffects": ["list"],
+          "precautions": ["list"],
+          "dosageInfo": "Guidance"
+        }`
+
+        console.log("Calling Groq API (8B model)...")
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "llama-3.1-8b-instant",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt }
+                ],
+                response_format: { type: "json_object" },
+                max_tokens: 512,
+                temperature: 0.1,
+            }),
         })
 
-        const systemPrompt = "You are a professional medical assistant. You provide structured, accurate information about medications. You must respond ONLY with a valid JSON object."
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error(`Groq API Error: ${response.status} - ${errorText}`)
+            throw new Error(`Groq API Error: ${response.status}`)
+        }
 
-        const userPrompt = `Provide detailed medical and usage information about the medication "${medicationName}". 
-    Required structure:
-    {
-      "description": "Short summary",
-      "uses": ["list of uses"],
-      "sideEffects": ["list of effects"],
-      "precautions": ["list of precautions"],
-      "dosageInfo": "General guidance"
-    }`
-
-        const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            response_format: { type: "json_object" },
-        })
-
-        const resultText = completion.choices[0].message.content
+        const result = await response.json()
+        const resultText = result.choices[0].message.content
+        console.log("Successfully retrieved response from Groq")
 
         return new Response(
             resultText,
@@ -71,4 +93,3 @@ serve(async (req) => {
         )
     }
 })
-

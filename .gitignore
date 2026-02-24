@@ -4,3 +4,10 @@ dist
 .env.local
 .env.production
 SECURITY_AI.md
+*_models.js
+test_*.js
+*.json
+*.txt
+!package.json
+!package-lock.json
+!tsconfig.json

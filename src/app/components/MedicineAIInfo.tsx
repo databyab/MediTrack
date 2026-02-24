@@ -48,6 +48,8 @@ export function MedicineAIInfo({ medicationName }: MedicineAIInfoProps) {
                     setError("Region Not Supported.");
                 } else if (errorMessage.includes("Key")) {
                     setError("Security Configuration Issue.");
+                } else if (errorMessage) {
+                    setError(`AI Error: ${errorMessage}`);
                 } else {
                     setError("AI service unavailable.");
                 }
