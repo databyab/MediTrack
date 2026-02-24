@@ -1,5 +1,8 @@
-import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle, Pencil, Info } from "lucide-react";
+import { Clock, Pill, TrendingUp, Calendar, CheckCircle2, Heart, Activity, Shield, ArrowRight, Lock, XCircle, Pencil, Info, ChevronUp } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { useState } from "react";
+import { MedicineAIInfo } from "./MedicineAIInfo";
+import { AnimatePresence } from "motion/react";
 
 interface Medication {
   id: string;
@@ -34,11 +37,12 @@ interface DashboardProps {
   onMarkMissed: (medicationId: string, scheduledTime: string) => void;
   onDeleteMedication?: (id: string) => void;
   onEditMedication?: (medication: Medication) => void;
-  onShowInfo?: (medicationName: string) => void;
   lastSyncTime?: string;
 }
 
-export function DashboardView({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication, onShowInfo }: DashboardProps) {
+export function DashboardView({ medications, onAddMedication, user, onSignIn, doseHistory, onMarkTaken, onMarkMissed, lastSyncTime, onDeleteMedication, onEditMedication }: DashboardProps) {
+  const [expandedToday, setExpandedToday] = useState<string | null>(null);
+  const [expandedYourMeds, setExpandedYourMeds] = useState<string | null>(null);
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -369,61 +373,77 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
               {todaysMedications.map((med, idx) => (
                 <div
                   key={`${med.id}-${idx}`}
-                  className="flex items-center justify-between p-4 rounded-xl border"
+                  className="p-4 rounded-xl border flex flex-col"
                   style={{
                     backgroundColor: med.isTaken ? '#F0F9F4' : med.isMissed ? '#FEF2F2' : '#F7FAF9',
                     borderColor: med.isTaken ? '#4D7C6F' : med.isMissed ? '#FCA5A5' : '#E6EAF0'
                   }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-lg flex flex-shrink-0 items-center justify-center"
-                      style={{ backgroundColor: med.isTaken ? '#4D7C6F' : med.isMissed ? '#EF4444' : 'white' }}
-                    >
-                      {med.isTaken ? (
-                        <CheckCircle2 className="w-6 h-6" style={{ color: 'white' }} />
-                      ) : med.isMissed ? (
-                        <XCircle className="w-6 h-6" style={{ color: 'white' }} />
-                      ) : (
-                        <Pill className="w-6 h-6" style={{ color: '#0F766E' }} />
-                      )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="w-12 h-12 rounded-lg flex flex-shrink-0 items-center justify-center"
+                        style={{ backgroundColor: med.isTaken ? '#4D7C6F' : med.isMissed ? '#EF4444' : 'white' }}
+                      >
+                        {med.isTaken ? (
+                          <CheckCircle2 className="w-6 h-6" style={{ color: 'white' }} />
+                        ) : med.isMissed ? (
+                          <XCircle className="w-6 h-6" style={{ color: 'white' }} />
+                        ) : (
+                          <Pill className="w-6 h-6" style={{ color: '#0F766E' }} />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="mb-1">{med.name}</h3>
+                        <p style={{ fontSize: '12px', color: '#475569' }}>
+                          {med.dosage} {med.unit} • {med.scheduledTime}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="mb-1">{med.name}</h3>
-                      <p style={{ fontSize: '12px', color: '#475569' }}>
-                        {med.dosage} {med.unit} • {med.scheduledTime}
-                      </p>
-                    </div>
+                    {!med.isTaken && !med.isMissed ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setExpandedToday(expandedToday === `${med.id}-${idx}` ? null : `${med.id}-${idx}`)}
+                          className={`p-2 rounded-lg border transition-all ${expandedToday === `${med.id}-${idx}` ? 'bg-teal-600 text-white border-teal-600' : 'hover:bg-teal-50 text-teal-600 border-teal-100'}`}
+                          title="AI Medicine Info"
+                        >
+                          {expandedToday === `${med.id}-${idx}` ? <ChevronUp className="w-5 h-5" /> : <Info className="w-5 h-5" />}
+                        </button>
+                        <button
+                          onClick={() => onMarkTaken(med.id, med.scheduledTime)}
+                          className="px-4 py-2 rounded-lg text-sm font-medium"
+                          style={{ backgroundColor: '#0F766E', color: 'white' }}
+                        >
+                          Taken
+                        </button>
+                        <button
+                          onClick={() => onMarkMissed(med.id, med.scheduledTime)}
+                          className="px-4 py-2 rounded-lg text-sm font-medium border"
+                          style={{ borderColor: '#FCA5A5', color: '#EF4444', backgroundColor: 'white' }}
+                        >
+                          Missed
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setExpandedToday(expandedToday === `${med.id}-${idx}` ? null : `${med.id}-${idx}`)}
+                          className={`p-2 rounded-lg border transition-all ${expandedToday === `${med.id}-${idx}` ? 'bg-teal-600 text-white border-teal-600' : 'hover:bg-teal-50 text-teal-600 border-teal-100'}`}
+                          title="AI Medicine Info"
+                        >
+                          {expandedToday === `${med.id}-${idx}` ? <ChevronUp className="w-5 h-5" /> : <Info className="w-5 h-5" />}
+                        </button>
+                        <div style={{ color: med.isTaken ? '#4D7C6F' : '#EF4444', fontSize: '14px', fontWeight: 600 }}>
+                          {med.isTaken ? '✓ Completed' : '✕ Missed'}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {!med.isTaken && !med.isMissed ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onShowInfo?.(med.name)}
-                        className="p-2 rounded-lg hover:bg-teal-50 text-teal-600 border border-teal-100 transition-colors"
-                        title="Medicine Info"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => onMarkTaken(med.id, med.scheduledTime)}
-                        className="px-4 py-2 rounded-lg text-sm font-medium"
-                        style={{ backgroundColor: '#0F766E', color: 'white' }}
-                      >
-                        Taken
-                      </button>
-                      <button
-                        onClick={() => onMarkMissed(med.id, med.scheduledTime)}
-                        className="px-4 py-2 rounded-lg text-sm font-medium border"
-                        style={{ borderColor: '#FCA5A5', color: '#EF4444', backgroundColor: 'white' }}
-                      >
-                        Missed
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ color: med.isTaken ? '#4D7C6F' : '#EF4444', fontSize: '14px', fontWeight: 600 }}>
-                      {med.isTaken ? '✓ Completed' : '✕ Missed'}
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {expandedToday === `${med.id}-${idx}` && (
+                      <MedicineAIInfo medicationName={med.name} />
+                    )}
+                  </AnimatePresence>
                 </div>
               ))}
             </div>
@@ -450,46 +470,53 @@ export function DashboardView({ medications, onAddMedication, user, onSignIn, do
               {medications.map((med) => (
                 <div
                   key={med.id}
-                  className="flex items-center justify-between p-4 rounded-xl border group"
+                  className="p-4 rounded-xl border group flex flex-col"
                   style={{
                     borderColor: '#E6EAF0',
                     backgroundColor: '#F7FAF9'
                   }}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-gray-100 flex-shrink-0">
-                      <Pill className="w-5 h-5 text-gray-500" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-gray-100 flex-shrink-0">
+                        <Pill className="w-5 h-5 text-gray-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate">{med.name}</h3>
+                        <p className="text-xs text-gray-500 truncate">
+                          {med.dosage} {med.unit}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{med.name}</h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {med.dosage} {med.unit}
-                      </p>
+                    <div className="flex gap-1 items-center">
+                      <button
+                        onClick={() => setExpandedYourMeds(expandedYourMeds === med.id ? null : med.id)}
+                        className={`p-2 rounded-lg border transition-all ${expandedYourMeds === med.id ? 'bg-teal-600 text-white border-teal-600' : 'hover:bg-teal-50 text-gray-400 hover:text-teal-600 border-transparent'}`}
+                        title="AI Medicine Info"
+                      >
+                        {expandedYourMeds === med.id ? <ChevronUp className="w-5 h-5" /> : <Info className="w-5 h-5" />}
+                      </button>
+                      <button
+                        onClick={() => onEditMedication?.(med)}
+                        className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0"
+                        title="Edit medication"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(med.id, med.name)}
+                        className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                        title="Delete medication"
+                      >
+                        <XCircle className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-1 items-center">
-                    <button
-                      onClick={() => onShowInfo?.(med.name)}
-                      className="p-2 rounded-lg hover:bg-teal-50 text-gray-400 hover:text-teal-600 transition-colors flex-shrink-0"
-                      title="Medicine Info"
-                    >
-                      <Info className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => onEditMedication?.(med)}
-                      className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0"
-                      title="Edit medication"
-                    >
-                      <Pencil className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(med.id, med.name)}
-                      className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
-                      title="Delete medication"
-                    >
-                      <XCircle className="w-5 h-5" />
-                    </button>
-                  </div>
+                  <AnimatePresence>
+                    {expandedYourMeds === med.id && (
+                      <MedicineAIInfo medicationName={med.name} />
+                    )}
+                  </AnimatePresence>
                 </div>
               ))}
             </div>
