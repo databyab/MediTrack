@@ -1,19 +1,19 @@
-# 🏥 MediTrack: Smart Medication Management
+# MediTrack: Smart Medication Management
 
 MediTrack is a premium, AI-powered medication tracking application designed to help users stay on top of their health with ease. Built with **React**, **TypeScript**, and **Supabase**, it features a sleek SaaS-style interface and secure AI-driven medical insights via **Groq**.
 
 LIVE: https://meditrack.databyab.in/
 
-## ✨ Key Features
+## Key Features
 
--   **📋 Smart Dashboard**: A comprehensive view of today's medication schedule with progress tracking.
--   **🤖 AI Insight Engine**: Instantly get detailed medical summaries, uses, side effects, and precautions for any medication using Groq's Llama 3.1 8B model.
--   **🔒 Secure by Design**: All AI integrations are proxied through Supabase Edge Functions, keeping your API keys safe from the client side.
--   **📊 Adherence Reports**: Track your consistency over time with visual progress reports and adherence scoring.
--   **📱 Fully Responsive**: A premium, "linear-style" design that works beautifully on desktop, tablet, and mobile.
--   **🔐 Robust Auth**: Secure user authentication via Supabase (Email/Password & Google OAuth).
+-   ** Smart Dashboard**: A comprehensive view of today's medication schedule with progress tracking.
+-   ** AI Insight Engine**: Instantly get detailed medical summaries, uses, side effects, and precautions for any medication using Groq's Llama 3.1 8B model.
+-   ** Secure by Design**: All AI integrations are proxied through Supabase Edge Functions, keeping your API keys safe from the client side.
+-   ** Adherence Reports**: Track your consistency over time with visual progress reports and adherence scoring.
+-   ** Fully Responsive**: A premium, "linear-style" design that works beautifully on desktop, tablet, and mobile.
+-   ** Robust Auth**: Secure user authentication via Supabase (Email/Password & Google OAuth).
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 -   **Frontend**: React 18, TypeScript, Vite, Tailwind CSS 4.
 -   **Animations**: Motion (formerly Framer Motion).
@@ -21,7 +21,7 @@ LIVE: https://meditrack.databyab.in/
 -   **AI Engine**: Groq (Llama 3.1 8B Instant).
 -   **Icons/UI**: Lucide React, Radix UI.
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -70,14 +70,14 @@ LIVE: https://meditrack.databyab.in/
 3.  **Database Setup**:
     Apply the schema provided in `supabase_schema.sql` via the Supabase SQL Editor.
 
-## 🛡 Security Note
+##  Security Note
 
 MediTrack takes security seriously:
 -   **API Security**: AI requests are handled server-side to prevent key exposure.
 -   **Data Protection**: Row Level Security (RLS) ensures users can only access their own medical data.
 -   **Input Validation**: Strict sanitization on all user-provided data sent to AI engines.
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License.
 
